@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import DrivePage from "./DrivePage";
+import { useRouter, useParams } from "next/navigation";
 import AuthScreen from "@/components/AuthScreen";
+import DrivePage from "../DrivePage";
 
-export default function Home() {
+export default function FolderPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const params = useParams();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,5 +39,7 @@ export default function Home() {
     );
   }
 
-  return <DrivePage user={user} onLogout={handleLogout} folderId={null} />;
+  return (
+    <DrivePage user={user} onLogout={handleLogout} folderId={params.folderId} />
+  );
 }
