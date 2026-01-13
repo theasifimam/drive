@@ -1,42 +1,5 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import DrivePage from "./DrivePage";
-import AuthScreen from "@/components/AuthScreen";
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    if (token && userData) {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUser(null);
-    router.push("/");
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <AuthScreen
-        onAuth={(userData) => {
-          setIsAuthenticated(true);
-          setUser(userData);
-        }}
-      />
-    );
-  }
-
-  return <DrivePage user={user} onLogout={handleLogout} folderId={null} />;
+  return <DrivePage folderId={null} />;
 }

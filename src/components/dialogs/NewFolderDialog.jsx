@@ -24,10 +24,10 @@ export default function NewFolderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0D0D0D] border-white/10 text-white">
+      <DialogContent className="bg-white border-slate-200 dark:bg-[#0D0D0D] dark:border-white/10 dark:text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl font-black uppercase tracking-wider">
-            <FolderPlusIcon className="w-6 h-6 text-[#E2FF54]" />
+            <FolderPlusIcon className="w-6 h-6 text-nexus-accent" />
             Create New Folder
           </DialogTitle>
         </DialogHeader>
@@ -52,7 +52,7 @@ export default function NewFolderDialog({
             </Button>
             <Button
               type="submit"
-              className="bg-[#E2FF54] text-black hover:bg-[#d4f043]"
+              className="bg-nexus-accent text-black hover:bg-[#d4f043]"
               disabled={!folderName.trim()}
             >
               Create Folder

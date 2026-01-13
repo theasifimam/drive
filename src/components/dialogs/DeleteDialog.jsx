@@ -22,7 +22,7 @@ export default function DeleteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0D0D0D] border-white/10 text-white">
+      <DialogContent className="bg-white  border-slate-200 dark:bg-[#0D0D0D] dark:border-white/10 dark:text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl font-black uppercase tracking-wider text-red-500">
             <AlertTriangleIcon className="w-6 h-6" />

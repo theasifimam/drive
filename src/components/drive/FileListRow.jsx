@@ -15,8 +15,10 @@ export default function FileListRow({
 }) {
   return (
     <tr
-      className={`group rounded-2xl hover:bg-white/3 transition-colors cursor-pointer ${
-        isSelected ? "bg-[#E2FF54]/5 " : ""
+      className={`group transition-colors cursor-pointer ${
+        isSelected
+          ? "bg-lime-500/10 dark:bg-nexus-accent/5"
+          : "hover:bg-slate-50 dark:hover:bg-white/3"
       }`}
       onClick={onClick}
     >
@@ -25,23 +27,23 @@ export default function FileListRow({
           checked={isSelected}
           onCheckedChange={onToggleSelection}
           onClick={(e) => e.stopPropagation()}
-          className="border-white/10 data-[state=checked]:bg-[#E2FF54]"
+          className="border-slate-300 dark:border-white/10 data-[state=checked]:bg-lime-500 dark:data-[state=checked]:bg-nexus-accent data-[state=checked]:border-transparent"
         />
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center gap-4">
-          <div className="opacity-60 group-hover:opacity-100 group-hover:text-[#E2FF54] transition-all">
+          <div className="text-slate-400 dark:opacity-60 group-hover:text-lime-600 dark:group-hover:text-nexus-accent dark:group-hover:opacity-100 transition-all">
             {getFileIcon(item)}
           </div>
-          <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
+          <span className="text-sm font-bold text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
             {item.name}
           </span>
         </div>
       </td>
-      <td className="px-4 py-4 font-mono text-[11px] text-gray-500 uppercase">
+      <td className="px-4 py-4 font-mono text-[11px] text-slate-400 dark:text-gray-500 uppercase">
         {item.type === "file" ? formatFileSize(item.size) : "---"}
       </td>
-      <td className="px-4 py-4 font-mono text-[11px] text-gray-500 uppercase">
+      <td className="px-4 py-4 font-mono text-[11px] text-slate-400 dark:text-gray-500 uppercase">
         {formatDate(item.createdAt)}
       </td>
       <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>

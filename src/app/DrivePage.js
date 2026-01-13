@@ -16,14 +16,14 @@ import RenameDialog from "@/components/dialogs/RenameDialog";
 import MoveDialog from "@/components/dialogs/MoveDialog";
 import DeleteDialog from "@/components/dialogs/DeleteDialog";
 import { useDriveData } from "@/hooks/useDriveData";
-import { useFileOperations } from "@/hooks/useFileOperations";
 import { useSelection } from "@/hooks/useSelection";
+import { useFileOperations } from "@/hooks/useFileOperations";
+import { useAuthStore } from "@/store/authStore";
 
-const API_URL = "http://localhost:5000/api";
-
-export default function DrivePage({ user, onLogout, folderId }) {
+export default function DrivePage({ folderId }) {
   const router = useRouter();
   const fileInputRef = useRef(null);
+  const user = useAuthStore((state) => state.user);
 
   // State Management
   const [currentFolderId, setCurrentFolderId] = useState(folderId);
@@ -46,7 +46,6 @@ export default function DrivePage({ user, onLogout, folderId }) {
     loading,
     fetchFiles,
     fetchAllFolders,
-    fetchBreadcrumbs,
   } = useDriveData(currentFolderId);
 
   const {
@@ -56,7 +55,7 @@ export default function DrivePage({ user, onLogout, folderId }) {
     moveItems,
     deleteItems,
     downloadFile,
-  } = useFileOperations(API_URL, fetchFiles, fetchAllFolders);
+  } = useFileOperations(fetchFiles, fetchAllFolders);
 
   const { selectedFiles, toggleSelection, selectAll, clearSelection } =
     useSelection(files);
@@ -74,10 +73,30 @@ export default function DrivePage({ user, onLogout, folderId }) {
     setCurrentFolderId(folderId);
   }, [folderId]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Only trigger if a file is currently being previewed
+      if (!previewFile) return;
+      if (event.key === "ArrowRight") {
+        navigatePreview(1);
+      } else if (event.key === "ArrowLeft") {
+        navigatePreview(-1);
+      } else if (event.key === "Escape") {
+        // Optional: Close preview on Escape key
+        setPreviewFile(null);
+      }
+    };
+    // Attach listener
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [previewFile, previewIndex, files]);
+
   // Navigation
   const navigateToFolder = (newFolderId) => {
     if (newFolderId) {
-      router.push(`/${newFolderId}`);
+      router.push(`/folder/${newFolderId}`);
     } else {
       router.push("/");
     }
@@ -141,6 +160,13 @@ export default function DrivePage({ user, onLogout, folderId }) {
     setShowPreview(true);
   };
 
+  /**
+   * The function `navigatePreview` allows for navigating through previewable files in a specific
+   * direction.
+   * @param direction - The `direction` parameter in the `navigatePreview` function is used to determine
+   * whether to navigate to the next or previous previewable file. It can have a value of either 1 (to
+   * navigate to the next file) or -1 (to navigate to the previous file).
+   */
   const navigatePreview = (direction) => {
     const previewableFiles = files.filter((f) => isPreviewable(f));
     let newIndex = previewIndex + direction;
@@ -194,15 +220,8 @@ export default function DrivePage({ user, onLogout, folderId }) {
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      <Header
-        user={user}
-        onLogout={onLogout}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-      />
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-black">
+      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
       <Breadcrumbs
         breadcrumbs={breadcrumbs}
@@ -212,8 +231,10 @@ export default function DrivePage({ user, onLogout, folderId }) {
 
       <div className="max-w-6xl mx-auto">
         <main
-          className={`relative flex-1 mt-10 rounded-[32px] border border-white/5 bg-[#0D0D0D] transition-all duration-500 overflow-hidden ${
-            dragOver ? "ring-2 ring-[#E2FF54] bg-[#E2FF54]/5 scale-[0.995]" : ""
+          className={`relative flex-1 mt-10 rounded-4xl border border-white/5 dark:bg-[#0D0D0D] transition-all duration-500 overflow-hidden ${
+            dragOver
+              ? "ring-2 ring-nexus-accent bg-lime-50/50 dark:bg-nexus-accent/5 scale-[0.995]"
+              : ""
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
@@ -313,6 +334,7 @@ export default function DrivePage({ user, onLogout, folderId }) {
 
       <PreviewDialog
         open={showPreview}
+        user={user}
         onOpenChange={setShowPreview}
         file={previewFile}
         onNavigate={navigatePreview}

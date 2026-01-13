@@ -1,41 +1,28 @@
-import { FolderIcon, FileIcon, ImageIcon, VideoIcon } from "lucide-react";
+import { FolderIcon, FileIcon, VideoIcon } from "lucide-react";
 
-const API_URL = "http://localhost:5000/api";
+// const API_URL = "http://localhost:5000/api";
 
 export const getFileIcon = (item) => {
   if (!item) return null;
   if (item?.type === "folder") {
-    return <FolderIcon className="w-8 h-8 text-blue-500" />;
+    return <FolderIcon className="w-8 h-8 text-nexus-accent/90" />;
   }
   if (item?.mimeType?.startsWith("image/")) {
-    return <ImageIcon className="w-8 h-8 text-green-500" />;
+    const thumbnail = encodeURI("http://localhost:5000" + item.thumbnailUrl);
+    return (
+      <img
+        src={thumbnail}
+        alt={item.name}
+        className="w-8 h-8 rounded-lg"
+        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
+      />
+    );
   }
   if (item?.mimeType?.startsWith("video/")) {
     return <VideoIcon className="w-8 h-8 text-purple-500" />;
   }
   return <FileIcon className="w-8 h-8 text-gray-500" />;
-};
-
-export const getThumbnail = (item) => {
-  const token = localStorage.getItem("token");
-  if (item.mimeType?.startsWith("image/")) {
-    return (
-      <img
-        src={`${API_URL}/preview/${item._id}?token=${token}`}
-        alt={item.name}
-        className="w-full h-32 object-cover rounded-lg"
-      />
-    );
-  }
-  if (item.mimeType?.startsWith("video/")) {
-    return (
-      <video
-        src={`${API_URL}/preview/${item._id}?token=${token}`}
-        className="w-full h-32 object-cover rounded-lg"
-      />
-    );
-  }
-  return null;
 };
 
 export const formatFileSize = (bytes) => {

@@ -1,4 +1,5 @@
-// components/dialogs/PreviewDialog.tsx
+"use client";
+
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,8 @@ import {
   ChevronRightIcon,
   DownloadIcon,
   XIcon,
+  FileIcon,
+  ShieldCheck,
 } from "lucide-react";
 
 const API_URL = "http://localhost:5000/api";
@@ -21,97 +24,150 @@ export default function PreviewDialog({
   file,
   onNavigate,
   onDownload,
+  user,
 }) {
   if (!file) return null;
-
-  const token = localStorage.getItem("token");
   const isImage = file.mimeType?.startsWith("image/");
   const isVideo = file.mimeType?.startsWith("video/");
+  const isPDF = file?.path?.endsWith(".pdf");
+
+  const previewUrl = encodeURI(`${API_URL}/files/view/${user.id}/${file._id}`);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl bg-[#0D0D0D] border-white/10 text-white">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span className="text-lg font-black uppercase tracking-wider">
-              {file.name}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onDownload}
-                className="bg-white/5 border-white/10 hover:bg-white/10"
-              >
-                <DownloadIcon className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-                className="hover:bg-white/10"
-              >
-                <XIcon className="w-4 h-4" />
-              </Button>
+    <Dialog open={open} onOpenChange={onOpenChange} className="rounded-none">
+      <DialogHeader className="hidden">
+        <DialogTitle className="hidden"></DialogTitle>
+      </DialogHeader>
+      {/* Modal Background stays dark for cinematic focus, but UI adapts */}
+      <DialogContent className="max-w-none min-w-screen rounded-none h-screen bg-[#050505] border-none p-0 m-0 gap-0 overflow-hidden outline-none ring-0 flex flex-col justify-center items-center">
+        {/* TOP INTERFACE: Adaptive glassmorphism */}
+        <div className="absolute top-0 left-0 w-full z-50 p-6 flex items-center justify-between bg-linear-to-b from-black/80 to-transparent backdrop-blur-[2px]">
+          <div className="flex items-center gap-4 pl-4">
+            {/* Keeping the brand accent color consistent */}
+            <div className="bg-lime-400 dark:bg-nexus-accent p-2 rounded-lg">
+              <FileIcon className="w-4 h-4 text-black" />
             </div>
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="relative flex items-center justify-center min-h-[400px] bg-black/50 rounded-xl p-4">
-          {/* Navigation Buttons */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onNavigate(-1)}
-            className="absolute left-4 z-10 bg-black/50 hover:bg-black/70 text-white"
-          >
-            <ChevronLeftIcon className="w-6 h-6" />
-          </Button>
-
-          {/* Preview Content */}
-          <div className="max-w-full max-h-[70vh] flex items-center justify-center">
-            {isImage && (
-              <img
-                src={`${API_URL}/preview/${file._id}?token=${token}`}
-                alt={file.name}
-                className="max-w-full max-h-full object-contain rounded-lg"
-              />
-            )}
-            {isVideo && (
-              <video
-                src={`${API_URL}/preview/${file._id}?token=${token}`}
-                controls
-                className="max-w-full max-h-full rounded-lg"
-              />
-            )}
+            <div className="flex flex-col">
+              <h3 className="text-sm font-black uppercase tracking-tighter truncate max-w-62.5 md:max-w-xl text-white">
+                {file.name}
+              </h3>
+              <p className="text-[9px] font-mono text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em]">
+                Node_Preview // {(file.size / (1024 * 1024)).toFixed(2)} MB
+              </p>
+            </div>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onNavigate(1)}
-            className="absolute right-4 z-10 bg-black/50 hover:bg-black/70 text-white"
-          >
-            <ChevronRightIcon className="w-6 h-6" />
-          </Button>
+          <div className="flex items-center gap-3 pr-4">
+            {/* Buttons that pop in Light Mode but stay sleek in Dark */}
+            <Button
+              onClick={onDownload}
+              className="hidden md:flex bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 text-white hover:bg-white hover:text-black dark:hover:bg-nexus-accent dark:hover:text-black rounded-full px-6 transition-all font-bold uppercase text-[10px] tracking-widest"
+            >
+              <DownloadIcon className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="w-12 h-12 rounded-full bg-white/10 dark:bg-white/5 hover:bg-red-500/80 text-white transition-all border border-white/20 dark:border-white/10"
+            >
+              <XIcon className="w-6 h-6" />
+            </Button>
+          </div>
         </div>
 
-        {/* File Info */}
-        <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl text-sm">
-          <div>
-            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
-              File Type
-            </p>
-            <p className="font-bold">{file.mimeType}</p>
+        {/* EDGE-TO-EDGE MEDIA CONTAINER: No Rounded Corners */}
+        <div className="w-full h-full relative flex items-center justify-center bg-black">
+          {/* NAVIGATION */}
+          <div className="absolute left-0 top-0 h-full w-24 z-40 flex items-center justify-center group/nav">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate(-1);
+              }}
+              className="h-16 w-16 rounded-full bg-black/40 backdrop-blur-md border border-white/10 opacity-0 group-hover/nav:opacity-100 hover:bg-white hover:text-black dark:hover:bg-nexus-accent transition-all duration-300 text-white"
+            >
+              <ChevronLeftIcon className="w-10 h-10" />
+            </Button>
           </div>
-          <div>
-            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
-              Size
-            </p>
-            <p className="font-bold">
-              {(file.size / 1024 / 1024).toFixed(2)} MB
-            </p>
+
+          <div className="absolute right-0 top-0 h-full w-24 z-40 flex items-center justify-center group/nav">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate(1);
+              }}
+              className="h-16 w-16 rounded-full bg-black/40 backdrop-blur-md border border-white/10 opacity-0 group-hover/nav:opacity-100 hover:bg-white hover:text-black dark:hover:bg-nexus-accent transition-all duration-300 text-white"
+            >
+              <ChevronRightIcon className="w-10 h-10" />
+            </Button>
+          </div>
+
+          <div className="w-full h-full flex items-center justify-center">
+            {isImage ? (
+              <img
+                src={previewUrl}
+                alt={file.name}
+                className="max-w-full max-h-full object-contain select-none shadow-[0_0_100px_rgba(0,0,0,0.5)]"
+                loading="lazy"
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+              />
+            ) : isVideo ? (
+              <div className="w-full h-full">
+                <video
+                  src={previewUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full bg-black"
+                />
+              </div>
+            ) : isPDF ? (
+              <div className="w-full h-full">
+                <iframe
+                  src={previewUrl}
+                  title={file.name}
+                  className="w-full h-full"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-6 p-16 border border-white/10 bg-white/5 backdrop-blur-md">
+                <FileIcon size={80} className="text-gray-600" strokeWidth={1} />
+                <div className="text-center">
+                  <p className="font-mono text-xs uppercase tracking-[0.4em] text-gray-400 mb-2">
+                    Binary_Stream
+                  </p>
+                  <span className="px-3 py-1 bg-white/10 text-white rounded text-[10px] font-mono border border-white/20 italic">
+                    {file.mimeType}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* FLOATING HUD: Light/Dark Adaptive but on Dark Ground */}
+        <div className="absolute bottom-12 z-50 flex items-center gap-6 px-8 py-3 bg-white/10 dark:bg-black/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-2xl shadow-2xl">
+          <div className="flex items-center gap-3">
+            <ShieldCheck
+              size={14}
+              className="text-lime-400 dark:text-nexus-accent"
+            />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-gray-300">
+              Secure_Node_Output
+            </span>
+          </div>
+          <div className="w-px h-4 bg-white/20" />
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-lime-400 dark:bg-nexus-accent animate-pulse" />
+            <span className="text-[10px] font-mono text-white">
+              SYSTEM_PREVIEW
+            </span>
           </div>
         </div>
       </DialogContent>

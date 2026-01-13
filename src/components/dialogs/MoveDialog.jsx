@@ -54,10 +54,10 @@ export default function MoveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#0D0D0D] border-white/10 text-white max-w-2xl">
+      <DialogContent className="bg-white border-slate-200 dark:bg-[#0D0D0D] dark:border-white/10 dark:text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl font-black uppercase tracking-wider">
-            <MoveIcon className="w-6 h-6 text-[#E2FF54]" />
+            <MoveIcon className="w-6 h-6 text-nexus-accent" />
             Move Items
           </DialogTitle>
         </DialogHeader>
@@ -87,7 +87,7 @@ export default function MoveDialog({
           </Button>
           <Button
             onClick={handleMove}
-            className="bg-[#E2FF54] text-black hover:bg-[#d4f043]"
+            className="bg-nexus-accent text-black hover:bg-[#d4f043]"
             disabled={destination === currentFolderId}
           >
             Move Here
