@@ -1,4 +1,4 @@
-import DrivePage from "./DrivePage";
+import DrivePage from "../DrivePage";
 
 export default function Home() {
   return <DrivePage folderId={null} />;

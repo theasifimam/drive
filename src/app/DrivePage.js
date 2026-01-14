@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import Breadcrumbs from "@/components/drive/Breadcrumbs";
 import ActionBar from "@/components/drive/ActionBar";
 import FileGrid from "@/components/drive/FileGrid";
@@ -16,38 +15,33 @@ import RenameDialog from "@/components/dialogs/RenameDialog";
 import MoveDialog from "@/components/dialogs/MoveDialog";
 import DeleteDialog from "@/components/dialogs/DeleteDialog";
 import { useDriveData } from "@/hooks/useDriveData";
-import { useSelection } from "@/hooks/useSelection";
 import { useFileOperations } from "@/hooks/useFileOperations";
 import { useAuthStore } from "@/store/authStore";
+import { useDriveStore } from "@/store/driveStore";
+import { RotateCcw, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import OperationsOverlay from "@/components/drive/OperationsOverlay";
 
 export default function DrivePage({ folderId }) {
   const router = useRouter();
   const fileInputRef = useRef(null);
   const user = useAuthStore((state) => state.user);
 
-  // State Management
-  const [currentFolderId, setCurrentFolderId] = useState(folderId);
-  const [viewMode, setViewMode] = useState("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dragOver, setDragOver] = useState(false);
-
-  // Dialog States
-  const [showNewFolder, setShowNewFolder] = useState(false);
-  const [showRename, setShowRename] = useState(false);
-  const [showMove, setShowMove] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-
-  // Custom Hooks
+  // ZUSTAND STORE
   const {
     files,
     breadcrumbs,
-    allFolders,
     loading,
-    fetchFiles,
-    fetchAllFolders,
-  } = useDriveData(currentFolderId);
+    viewMode,
+    selectedIds,
+    setViewMode,
+    toggleSelection,
+    selectAll,
+    clearSelection,
+  } = useDriveStore();
 
+  // CUSTOM HOOKS
+  const { allFolders, refetch } = useDriveData(folderId);
   const {
     createFolder,
     uploadFiles,
@@ -55,45 +49,45 @@ export default function DrivePage({ folderId }) {
     moveItems,
     deleteItems,
     downloadFile,
-  } = useFileOperations(fetchFiles, fetchAllFolders);
+  } = useFileOperations();
 
-  const { selectedFiles, toggleSelection, selectAll, clearSelection } =
-    useSelection(files);
+  // LOCAL STATE
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dragOver, setDragOver] = useState(false);
 
+  // DIALOG STATES
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [showRename, setShowRename] = useState(false);
+  const [showMove, setShowMove] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  // DIALOG DATA
   const [previewFile, setPreviewFile] = useState(null);
   const [previewIndex, setPreviewIndex] = useState(0);
-  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderName, setNewFolderName] = useState("New Folder");
   const [renamingItem, setRenamingItem] = useState(null);
   const [newName, setNewName] = useState("");
   const [movingItems, setMovingItems] = useState([]);
   const [moveDestination, setMoveDestination] = useState(null);
 
-  // Update folder ID when prop changes
-  useEffect(() => {
-    setCurrentFolderId(folderId);
-  }, [folderId]);
-
+  // KEYBOARD NAVIGATION FOR PREVIEW
   useEffect(() => {
     const handleKeyDown = (event) => {
-      // Only trigger if a file is currently being previewed
       if (!previewFile) return;
       if (event.key === "ArrowRight") {
         navigatePreview(1);
       } else if (event.key === "ArrowLeft") {
         navigatePreview(-1);
       } else if (event.key === "Escape") {
-        // Optional: Close preview on Escape key
         setPreviewFile(null);
       }
     };
-    // Attach listener
     window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [previewFile, previewIndex, files]);
 
-  // Navigation
+  // NAVIGATION
   const navigateToFolder = (newFolderId) => {
     if (newFolderId) {
       router.push(`/folder/${newFolderId}`);
@@ -103,48 +97,60 @@ export default function DrivePage({ folderId }) {
   };
 
   const handleShareFolder = () => {
-    const url = currentFolderId
-      ? `${window.location.origin}/folder/${currentFolderId}`
+    const url = folderId
+      ? `${window.location.origin}/folder/${folderId}`
       : window.location.origin;
     navigator.clipboard.writeText(url).then(() => {
       alert("Folder link copied to clipboard!");
     });
   };
 
-  // File Operations
+  // FILE OPERATIONS
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
-    await createFolder(newFolderName, currentFolderId);
-    setNewFolderName("");
-    setShowNewFolder(false);
+    const success = await createFolder(newFolderName, folderId);
+    if (success) {
+      setNewFolderName("");
+      setShowNewFolder(false);
+      refetch();
+    }
   };
 
   const handleRename = async () => {
     if (!newName.trim() || !renamingItem) return;
-    await renameItem(renamingItem._id, newName);
-    setShowRename(false);
-    setRenamingItem(null);
-    setNewName("");
+    const success = await renameItem(renamingItem._id, newName);
+    if (success) {
+      setShowRename(false);
+      setRenamingItem(null);
+      setNewName("");
+      refetch();
+    }
   };
 
   const handleMove = async () => {
     if (movingItems.length === 0) return;
-    await moveItems(movingItems, moveDestination);
-    setShowMove(false);
-    setMovingItems([]);
-    setMoveDestination(null);
-    clearSelection();
+    const success = await moveItems(movingItems, moveDestination);
+    if (success) {
+      setShowMove(false);
+      setMovingItems([]);
+      setMoveDestination(null);
+      clearSelection();
+      refetch();
+    }
   };
 
   const handleDelete = async () => {
     const itemsToDelete =
-      selectedFiles.size > 0 ? Array.from(selectedFiles) : [showDelete];
-    await deleteItems(itemsToDelete);
-    setShowDelete(false);
-    clearSelection();
+      selectedIds.size > 0 ? Array.from(selectedIds) : [showDelete];
+    const success = await deleteItems(itemsToDelete);
+    if (success) {
+      setShowDelete(false);
+      clearSelection();
+      refetch();
+    }
   };
 
-  // Preview Operations
+  // PREVIEW OPERATIONS
   const isPreviewable = (file) => {
     if (!file || !file.mimeType) return false;
     return (
@@ -160,13 +166,6 @@ export default function DrivePage({ folderId }) {
     setShowPreview(true);
   };
 
-  /**
-   * The function `navigatePreview` allows for navigating through previewable files in a specific
-   * direction.
-   * @param direction - The `direction` parameter in the `navigatePreview` function is used to determine
-   * whether to navigate to the next or previous previewable file. It can have a value of either 1 (to
-   * navigate to the next file) or -1 (to navigate to the previous file).
-   */
   const navigatePreview = (direction) => {
     const previewableFiles = files.filter((f) => isPreviewable(f));
     let newIndex = previewIndex + direction;
@@ -176,12 +175,12 @@ export default function DrivePage({ folderId }) {
     setPreviewFile(previewableFiles[newIndex]);
   };
 
-  // Drag and Drop
+  // DRAG AND DROP
   const handleDrop = (e) => {
     e.preventDefault();
     setDragOver(false);
     if (e.dataTransfer.files.length > 0) {
-      uploadFiles(e.dataTransfer.files, currentFolderId);
+      uploadFiles(e.dataTransfer.files, folderId).then(() => refetch());
     }
   };
 
@@ -194,12 +193,12 @@ export default function DrivePage({ folderId }) {
     setDragOver(false);
   };
 
-  // Filtered Files
-  const filteredFiles = files.filter((file) =>
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // FILTERED FILES
+  const filteredFiles = files?.filter((file) => {
+    return file.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
-  // Item Actions
+  // ITEM ACTIONS
   const handleItemClick = (item) => {
     if (item.type === "folder") {
       navigateToFolder(item._id);
@@ -221,8 +220,6 @@ export default function DrivePage({ folderId }) {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-black">
-      <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-
       <Breadcrumbs
         breadcrumbs={breadcrumbs}
         onHomeClick={() => navigateToFolder(null)}
@@ -246,11 +243,11 @@ export default function DrivePage({ folderId }) {
             <ActionBar
               onNewFolder={() => setShowNewFolder(true)}
               onUpload={() => fileInputRef.current?.click()}
-              onShare={currentFolderId ? handleShareFolder : null}
+              onShare={folderId ? handleShareFolder : null}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
-              selectedCount={selectedFiles.size}
-              onMove={() => openMoveDialog(Array.from(selectedFiles))}
+              selectedCount={selectedIds.size}
+              onMove={() => openMoveDialog(Array.from(selectedIds))}
               onDelete={() => setShowDelete(true)}
               onClearSelection={clearSelection}
             />
@@ -260,7 +257,8 @@ export default function DrivePage({ folderId }) {
               type="file"
               multiple
               onChange={(e) =>
-                e.target.files && uploadFiles(e.target.files, currentFolderId)
+                e.target.files &&
+                uploadFiles(e.target.files, folderId).then(() => refetch())
               }
               className="hidden"
             />
@@ -272,7 +270,7 @@ export default function DrivePage({ folderId }) {
             ) : viewMode === "grid" ? (
               <FileGrid
                 files={filteredFiles}
-                selectedFiles={selectedFiles}
+                selectedFiles={selectedIds}
                 onToggleSelection={toggleSelection}
                 onItemClick={handleItemClick}
                 onDownload={downloadFile}
@@ -283,7 +281,7 @@ export default function DrivePage({ folderId }) {
             ) : (
               <FileList
                 files={filteredFiles}
-                selectedFiles={selectedFiles}
+                selectedFiles={selectedIds}
                 onToggleSelection={toggleSelection}
                 onSelectAll={selectAll}
                 onItemClick={handleItemClick}
@@ -297,7 +295,7 @@ export default function DrivePage({ folderId }) {
         </main>
       </div>
 
-      {/* Dialogs */}
+      {/* DIALOGS */}
       <NewFolderDialog
         open={showNewFolder}
         onOpenChange={setShowNewFolder}
@@ -321,7 +319,7 @@ export default function DrivePage({ folderId }) {
         onDestinationChange={setMoveDestination}
         folders={allFolders}
         movingItems={movingItems}
-        currentFolderId={currentFolderId}
+        currentFolderId={folderId}
         onMove={handleMove}
       />
 
@@ -329,7 +327,7 @@ export default function DrivePage({ folderId }) {
         open={showDelete}
         onOpenChange={setShowDelete}
         onDelete={handleDelete}
-        itemCount={selectedFiles.size || 1}
+        itemCount={selectedIds.size || 1}
       />
 
       <PreviewDialog
@@ -339,6 +337,12 @@ export default function DrivePage({ folderId }) {
         file={previewFile}
         onNavigate={navigatePreview}
         onDownload={() => downloadFile(previewFile._id)}
+      />
+
+      {/* FLOATING ACTION HUD (Appears on selection) */}
+      <OperationsOverlay
+        selectedIds={selectedIds}
+        handleDelete={handleDelete}
       />
     </div>
   );

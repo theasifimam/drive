@@ -1,83 +1,102 @@
-"use client";
+import { useEffect, useCallback } from "react";
+import { filesAPI } from "@/lib/api/endpoints/files";
+import { useAuthStore } from "@/store/authStore";
+import { useDriveStore } from "@/store/driveStore";
 
-import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+export function useDriveData(folderId) {
+  const user = useAuthStore((state) => state.user);
 
-// Create an instance to keep the code DRY
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-const driveApi = axios.create({
-  baseURL: API_URL,
-  withCredentials: true, // Sends cookies automatically
-});
+  const {
+    files,
+    breadcrumbs,
+    folders,
+    loading,
+    setCurrentFolder,
+    setFiles,
+    setBreadcrumbs,
+    setFolders,
+    setLoading,
+    setError,
+    getCachedFiles,
+    cacheFiles,
+  } = useDriveStore();
 
-export function useDriveData(currentFolderId) {
-  const [files, setFiles] = useState([]);
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
-  const [allFolders, setAllFolders] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // --- FETCH FILES (Current Directory) ---
+  // Fetch files with caching
   const fetchFiles = useCallback(async () => {
-    setLoading(true);
-    try {
-      // If currentFolderId is "root" or null, we pass empty string or specific root param
-      const parentId =
-        currentFolderId && currentFolderId !== "root" ? currentFolderId : "";
-      const res = await driveApi.get(
-        `/files/folder-files/${parentId || "root"}`
-      );
+    if (!user) return;
 
-      // Axios stores data in .data
-      setFiles(res.data.success ? res.data.data : res.data);
+    // Check cache first
+    const cached = getCachedFiles(folderId || "root");
+    if (cached) {
+      setFiles(cached);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await filesAPI.getFiles(folderId);
+      setFiles(data.data);
+      cacheFiles(folderId || "root", data.data);
     } catch (error) {
-      console.error(
-        "DRIVE_FETCH_ERROR:",
-        error.response?.data || error.message
-      );
+      setError(error.message);
     } finally {
       setLoading(false);
     }
-  }, [currentFolderId]);
+  }, [
+    folderId,
+    user,
+    getCachedFiles,
+    setFiles,
+    cacheFiles,
+    setLoading,
+    setError,
+  ]);
 
-  // --- FETCH ALL FOLDERS (For Move/Copy Tree) ---
-  const fetchAllFolders = useCallback(async () => {
-    try {
-      const res = await driveApi.get("/files/all-folders");
-      setAllFolders(res.data.success ? res.data.data : res.data);
-    } catch (error) {
-      console.error("FOLDER_TREE_FETCH_ERROR:", error);
-    }
-  }, []);
-
-  // --- FETCH BREADCRUMBS ---
+  // Fetch breadcrumbs
   const fetchBreadcrumbs = useCallback(async () => {
-    if (!currentFolderId || currentFolderId === "root") {
+    if (!folderId || folderId === "root") {
       setBreadcrumbs([]);
       return;
     }
-    try {
-      const res = await driveApi.get(`/files/breadcrumb/${currentFolderId}`);
-      setBreadcrumbs(res.data.success ? res.data.data : res.data);
-    } catch (error) {
-      console.error("BREADCRUMB_FETCH_ERROR:", error);
-    }
-  }, [currentFolderId]);
 
-  // Trigger sync when folder changes
+    try {
+      const result = await filesAPI.getBreadcrumbs(folderId);
+      setBreadcrumbs(result.data);
+    } catch (error) {
+      console.error("Breadcrumb fetch error:", error);
+    }
+  }, [folderId, setBreadcrumbs]);
+
+  // Fetch all folders (for move dialog)
+  const fetchAllFolders = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const data = await filesAPI.getAllFolders();
+      setFolders(data.data);
+    } catch (error) {
+      console.error("Folders fetch error:", error);
+    }
+  }, [user, setFolders]);
+
   useEffect(() => {
+    setCurrentFolder(folderId);
     fetchFiles();
     fetchBreadcrumbs();
-    // Fetch folders only once or when needed (e.g., for sidebar)
+  }, [folderId, setCurrentFolder, fetchFiles, fetchBreadcrumbs]);
+
+  useEffect(() => {
     fetchAllFolders();
-  }, [currentFolderId, fetchFiles, fetchBreadcrumbs, fetchAllFolders]);
+  }, [fetchAllFolders]);
 
   return {
     files,
     breadcrumbs,
-    allFolders,
+    allFolders: folders,
     loading,
-    fetchFiles,
-    fetchAllFolders,
-    fetchBreadcrumbs,
+    refetch: fetchFiles,
+    refetchFolders: fetchAllFolders,
   };
 }

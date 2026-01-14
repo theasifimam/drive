@@ -37,7 +37,7 @@ export default function RenameDialog({
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder="Enter new name..."
-              className="bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+              className="bg-white/5 border-white/10 dark:text-white placeholder:text-gray-500"
               autoFocus
             />
           </div>

@@ -1,16 +1,24 @@
+"use client";
+
 import React from "react";
 import { CloudIcon, SearchIcon, Command } from "lucide-react";
 import ProfileDropdown from "./dropdowns/ProfileDropdown";
+import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
+  const router = useRouter();
   return (
     <header className="sticky top-0 z-40 w-full px-6 py-3 bg-white/80 dark:bg-[#050505]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/5 transition-colors duration-500">
       <div className="flex items-center justify-between gap-8">
         {/* SECTION 1: COMPACT BRAND */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="bg-lime-400 dark:bg-nexus-accent p-1.5 rounded-lg shadow-[0_4px_12px_rgba(132,204,22,0.2)] dark:shadow-[0_0_15px_rgba(226,255,84,0.1)]">
+          <Button
+            onClick={() => router.push("/")}
+            className="bg-lime-400 dark:bg-nexus-accent p-1.5 rounded-lg shadow-[0_4px_12px_rgba(132,204,22,0.2)] dark:shadow-[0_0_15px_rgba(226,255,84,0.1)]"
+          >
             <CloudIcon className="w-4 h-4 text-black" />
-          </div>
+          </Button>
           <div className="hidden sm:block">
             <h1 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white leading-none transition-colors">
               Mazlis{" "}

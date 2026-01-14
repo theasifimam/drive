@@ -21,6 +21,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "next/navigation";
 import { ProfileDialog } from "../dialogs/ProfileDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import ResetPasswordDialog from "../dialogs/ResetPasswordDialog";
 
 const ProfileDropdown = () => {
   const { theme, setTheme } = useTheme();
@@ -107,23 +108,17 @@ const ProfileDropdown = () => {
 
         <DropdownMenuSeparator className="bg-border opacity-50 my-2" />
 
-        <DropdownMenuItem className="group rounded-xl text-gray-500 dark:text-gray-400 focus:bg-gray-500/10 focus:text-gray-700 dark:focus:text-gray-400 py-3 px-4 cursor-pointer font-black text-[10px] uppercase tracking-widest transition-all mt-1">
-          <ShieldEllipsis
-            size={16}
-            className="mr-3 transition-transform group-hover:-translate-x-1"
-          />
-          Reset password
-        </DropdownMenuItem>
+        <ResetPasswordDialog />
 
         <DropdownMenuItem
-          onClick={() => router.push("/recycle-bin")}
+          onClick={() => router.push("/trash")}
           className="group rounded-xl text-gray-500 dark:text-gray-400 focus:bg-gray-500/10 focus:text-gray-700 dark:focus:text-gray-400 py-3 px-4 cursor-pointer font-black text-[10px] uppercase tracking-widest transition-all mt-1"
         >
           <Recycle
             size={16}
             className="mr-3 transition-transform group-hover:-translate-x-1"
           />
-          Recycle Bin
+          Trash
         </DropdownMenuItem>
 
         {/* SECTION 3: ACTIONS */}

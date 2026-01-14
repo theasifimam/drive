@@ -12,9 +12,11 @@ export default function FileGrid({
   onMove,
   onDelete,
   isTrashView,
+  restoreItems,
+  bulkDeletePermanently,
 }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
       {files.map((item) => (
         <FileCard
           key={item._id}
@@ -27,6 +29,8 @@ export default function FileGrid({
           onMove={() => onMove(item)}
           onDelete={() => onDelete(item._id)}
           isTrashView={isTrashView}
+          restoreItems={restoreItems}
+          bulkDeletePermanently={bulkDeletePermanently}
         />
       ))}
     </div>

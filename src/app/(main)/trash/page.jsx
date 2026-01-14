@@ -4,15 +4,21 @@ import React, { useState, useMemo } from "react";
 import { Trash2, RotateCcw, ShieldAlert, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FileGrid from "@/components/drive/FileGrid";
+import { useTrashStore } from "@/store/trashStore";
+import { useTrashData } from "@/hooks/useTrashData";
 
 export default function TrashPage() {
-  const [files, setFiles] = useState([]); // Fetch your trashed files here
-  const [selectedIds, setSelectedIds] = useState(new Set());
+  const { files, selectedIds, setSelectedIds } = useTrashStore();
+  const { fetchTrashes, restoreTrashes, bulkDeletePermanently } =
+    useTrashData();
 
-  const trashedFiles = useMemo(() => files.filter((f) => f.isTrashed), [files]);
+  // const trashedFiles = useMemo(() => files.filter((f) => f.isTrashed), [files]);
 
+  async function restoreItems(ids) {
+    restoreTrashes(ids);
+  }
   return (
-    <div className="relative min-h-screen p-8 bg-transparent">
+    <div className="relative min-h-screen p-8 bg-transparent max-w-7xl mx-auto">
       {/* HEADER SECTION */}
       <div className="flex justify-between items-end mb-10 px-4">
         <div>
@@ -41,9 +47,11 @@ export default function TrashPage() {
       </div>
 
       {/* BENTO GRID */}
-      {trashedFiles.length > 0 ? (
+      {files.length > 0 ? (
         <FileGrid
-          files={trashedFiles}
+          files={files}
+          restoreItems={restoreItems}
+          bulkDeletePermanently={bulkDeletePermanently}
           selectedFiles={selectedIds}
           onToggleSelection={(id) => {
             const newSet = new Set(selectedIds);
@@ -65,7 +73,7 @@ export default function TrashPage() {
       {/* FLOATING ACTION HUD (Appears on selection) */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
-          <div className="flex items-center gap-2 px-6 py-4 bg-black/80 dark:bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-[32px] shadow-2xl">
+          <div className="flex items-center gap-2 px-6 py-4 bg-black/80 dark:bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-4xl shadow-2xl">
             <span className="text-[10px] font-black text-white/50 mr-4 border-r border-white/10 pr-4">
               {selectedIds.size}{" "}
               <span className="ml-1 tracking-tighter">NODES_SELECTED</span>
@@ -73,7 +81,7 @@ export default function TrashPage() {
 
             <Button
               onClick={() => {
-                /* Restore API */
+                restoreTrashes(Array.from(selectedIds));
               }}
               className="bg-nexus-accent hover:bg-nexus-accent/80 text-black rounded-2xl text-[10px] font-black uppercase px-6"
             >
@@ -82,7 +90,7 @@ export default function TrashPage() {
 
             <Button
               onClick={() => {
-                /* Delete Permanently API */
+                bulkDeletePermanently(Array.from(selectedIds));
               }}
               className="bg-red-600 hover:bg-red-700 text-white rounded-2xl text-[10px] font-black uppercase px-6"
             >
